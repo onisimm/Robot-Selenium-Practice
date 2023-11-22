@@ -2,7 +2,6 @@ from RPA.Desktop.Windows import Windows
 import pyperclip
 import os, re
 import time
-import pyautogui
 import pygetwindow as gw
 
 def get_folder_path() -> str:

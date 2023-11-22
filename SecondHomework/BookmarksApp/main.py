@@ -1,6 +1,10 @@
 from RPA.Desktop.Windows import Windows
 from enum import Enum, unique
 from pywinauto.controls import uia_controls
+import pyautogui
+import time
+import os
+import pyperclip
 
 @unique
 class Option(Enum):
@@ -13,33 +17,80 @@ def open_app(app_name, window_title) -> Windows:
     win.open_from_search(app_name, window_title)
     return win
 
-def get_window_element_bookmarks(win) -> list:
-    elements = win.get_window_elements()
+def get_current_path() -> str:
+    folder_path = os.path.dirname(os.path.realpath(__file__)) + "\\"
+    os.makedirs(folder_path, exist_ok=True)
+    return folder_path
 
-    # The elements variable is a list containing two lists
-    # The second list contains dictionaries of element properties
-    element_properties = elements[1]
+from html.parser import HTMLParser
+import re
 
-    # Now, find all button elements that are children of this toolbar
-    bookmarks = [element for element in element_properties
-                 if 'object' in element 
-                 and isinstance(element['object'], uia_controls.ButtonWrapper) 
-                 and element['parent'] == 'ToolBar' 
-                 and element['name'] != '']  # Assuming bookmark buttons have non-empty names
+class BookmarkParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.bookmarks = []
+        self.current_bookmark = {}
 
-    return bookmarks
+    def handle_data(self, data):
+        if self.current_bookmark.get('href'):
+            # Extracting only the text part for the name of the bookmark
+            name = re.sub(r'\s+', ' ', data.strip())
+            if name:
+                self.current_bookmark['name'] = name
+                self.bookmarks.append(self.current_bookmark)
+                self.current_bookmark = {}
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'a':
+            self.current_bookmark = {attr[0]: attr[1] for attr in attrs if attr[0] in ['href', 'icon']}
+
+    def handle_data(self, data):
+        if self.current_bookmark.get('href'):
+            # Extracting only the text part for the name of the bookmark
+            name = re.sub(r'\s+', ' ', data.strip())
+            if name:
+                self.current_bookmark['name'] = name
+                self.bookmarks.append(self.current_bookmark)
+                self.current_bookmark = {}
+
+def parse_bookmarks(file_path):
+    parser = BookmarkParser()
+    with open(file_path, 'r', encoding='utf-8') as file:
+        parser.feed(file.read())
+    return parser.bookmarks
 
 def get_browser_bookmarks():
     win = open_app("chrome", "New Tab - Google Chrome")
-    bookmarks_element = get_window_element_bookmarks(win)
+    
+    pyautogui.hotkey('alt', 'f')
+    win.send_keys('b')
+    win.send_keys('b')
+    time.sleep(0.2)
+    win.send_keys('{TAB}')
+    win.send_keys('{SPACE}')
+    for i in range(4):
+        win.send_keys('{DOWN}')
+    win.send_keys('{SPACE}')
+    time.sleep(0.5)
+    bookmarks_path = get_current_path() + "bookmarks.html"
+    pyperclip.copy(bookmarks_path)
+    win.send_keys('^v')
+    try:
+        os.remove(bookmarks_path)
+    except:
+        pass
+    win.send_keys('{ENTER}')
+    time.sleep(0.2)
 
-    print(bookmarks_element)
+    win.close_all_applications()
+
+    return parse_bookmarks(bookmarks_path)
 
 def check_text_in_bookmarks():
-    get_browser_bookmarks()
+    bookmarks = get_browser_bookmarks()
 
 def check_photo_in_bookmarks():
-    get_browser_bookmarks()
+    bookmarks = get_browser_bookmarks()
 
 def output_menu() -> Option:
     print("Choose the option you wish to continue with: ")
