@@ -1,0 +1,7 @@
+    - configure your chrome browser so that you have 6 bookmarks in the bookmark bar, visible at all times. Ensure some bookmarks have an icon visible.
+    - write a terminal app that does the following:
+        - it allows the user to select between two options:
+            - 1. Input some text, then if that text is contained in any of the text for the bookmarks, open that bookmark in the browser
+            - 2. Input a path to an image file. If the image at that location matches the thumbnail for the bookmark, open that bookmark.
+    - you can use the rpaframework Images library to work with images on the desktop: https://rpaframework.org/libdoc/RPA_Images.html#library-documentation-top
+    - for OCR, the rpaframework-recognition library in RPA.Desktop should cover what we need to do OCR-wise. In case OCR is not working correctly, try tweaking browser colors, so that the bookmark text is visible on the browser bookmark bar background.
